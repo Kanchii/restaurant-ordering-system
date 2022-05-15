@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using RestaurantOrderingSystem.BO;
 using RestaurantOrderingSystem.Models;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -14,6 +15,8 @@ builder.Services.AddDbContext<DatabaseContext>(x =>
 {
     x.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnectionString"));
 });
+
+builder.Services.AddTransient<IProductBO, ProductBO>();
 
 
 var app = builder.Build();
