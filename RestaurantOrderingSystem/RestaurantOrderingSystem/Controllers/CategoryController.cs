@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using RestaurantOrderingSystem.BO;
 using RestaurantOrderingSystem.Models;
 using RestaurantOrderingSystem.Models.Entities.Category;
 
@@ -9,32 +10,25 @@ namespace RestaurantOrderingSystem.Controllers
     [ApiController]
     public class CategoryController : Controller
     {
-        private readonly DatabaseContext _databaseContext;
+        private readonly ICategoryBO _categoryBO;
 
-        public CategoryController(DatabaseContext databaseContext)
+        public CategoryController(ICategoryBO categoryBO)
         {
-            _databaseContext = databaseContext;
+            _categoryBO = categoryBO;
         }
 
         [HttpGet]
         public IActionResult GetAllCategoriesAsync()
         {
-            if (_databaseContext.Categories is null)
-                return NotFound();
-
-            var categories = _databaseContext.Categories.Select(x => x);
+            var categories = _categoryBO.GetAllCategories();
 
             return Ok(categories);
         }
 
         [HttpGet("{id:int}")]
-        public IActionResult GetCategoryByIdAsync([FromRoute] int id)
+        public async Task<IActionResult> GetCategoryAsync([FromRoute] int id)
         {
-            if (_databaseContext.Categories is null)
-                return NotFound();
-
-            var category = _databaseContext.Categories.FirstOrDefault(c => c.Id == id);
-
+            var category = await _categoryBO.GetCategoryAsync(id);
             if (category is null)
                 return NotFound();
 
@@ -44,14 +38,7 @@ namespace RestaurantOrderingSystem.Controllers
         [HttpGet("{id:int}/products")]
         public IActionResult GetCategoryWithProductsById([FromRoute] int id)
         {
-            if (_databaseContext.Categories is null)
-                return NotFound();
-
-            var category = _databaseContext
-                .Categories
-                .Include(c => c.Products)
-                .FirstOrDefault(c => c.Id == id);
-
+            var category = _categoryBO.GetCategoryWithProducts(id);
             if (category is null)
                 return NotFound();
 
@@ -61,30 +48,30 @@ namespace RestaurantOrderingSystem.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateCategoryAsync([FromBody] CreateCategoryRequest categoryRequest)
         {
-            var category = new Category
-            {
-                Name = categoryRequest.Name
-            };
-            var categoryCreated = await _databaseContext.Categories.AddAsync(category);
+            var category = await _categoryBO.CreateCategoryAsync(categoryRequest);
 
-            await _databaseContext.SaveChangesAsync();
+            return Ok(category);
+        }
 
-            return Ok(categoryCreated.Entity);
+        [HttpPut("{id:int}")]
+        public async Task<IActionResult> UpdateCategoryAsync([FromRoute] int id, [FromBody] UpdateCategoryRequest updateCategoryRequest)
+        {
+            var updatedCategory = await _categoryBO.UpdateCategoryAsync(id, updateCategoryRequest);
+            if (updatedCategory is null)
+                return NotFound();
+
+            return Ok(updatedCategory);
+
         }
 
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> DeleteCategoryByIdAsync([FromRoute] int id)
         {
-            var category = await _databaseContext.Categories.FindAsync(id);
-
-            if (category is null)
+            var deletedCategory = await _categoryBO.DeleteCategory(id);
+            if (deletedCategory is null)
                 return NotFound();
 
-            var deletedCategory = _databaseContext.Categories.Remove(category);
-
-            await _databaseContext.SaveChangesAsync();
-
-            return Ok(deletedCategory.Entity);
+            return Ok(deletedCategory);
         }
     }
 }
