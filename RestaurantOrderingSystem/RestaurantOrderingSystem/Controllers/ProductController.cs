@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using RestaurantOrderingSystem.BO;
 using RestaurantOrderingSystem.Models;
 using RestaurantOrderingSystem.Models.Entities.Product;
 using System.Net;
@@ -10,17 +11,17 @@ namespace RestaurantOrderingSystem.Controllers
     [ApiController]
     public class ProductController : ControllerBase
     {
-        private readonly DatabaseContext _databaseContext;
+        private readonly IProductBO _productBO;
 
-        public ProductController(DatabaseContext databaseContext)
+        public ProductController(IProductBO productBO)
         {
-            _databaseContext = databaseContext;
+            _productBO = productBO;
         }
 
         [HttpGet]
         public IActionResult GetAllProduct()
         {
-            var allProducts = _databaseContext.Products.Select(x => x);
+            var allProducts = _productBO.GetAllProducts();
 
             return Ok(allProducts);
         }
@@ -28,7 +29,18 @@ namespace RestaurantOrderingSystem.Controllers
         [HttpGet("{productId}")]
         public async Task<IActionResult> GetProductById([FromRoute] int productId)
         {
-            var product = await _databaseContext.Products.FindAsync(productId);
+            var product = await _productBO.GetProductByIdAsync(productId);
+
+            if (product is null)
+                return NotFound();
+
+            return Ok(product);
+        }
+
+        [HttpGet("{productId:int}/category")]
+        public IActionResult GetProductWithCategoryById([FromRoute] int productId)
+        {
+            var product = _productBO.GetProductByIdWithCategory(productId);
 
             if (product is null)
                 return NotFound();
@@ -39,43 +51,14 @@ namespace RestaurantOrderingSystem.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateProductAsync([FromBody] CreateProductRequest createProductRequest)
         {
-            var category = await _databaseContext.Categories.FindAsync(createProductRequest.CategoryId);
-            if (category is null)
-                return BadRequest($"Category ID {createProductRequest.CategoryId} not exists");
-
-            var product = new Product
-            {
-                Name = createProductRequest.Name,
-                Price = createProductRequest.Price,
-                CategoryId = createProductRequest.CategoryId
-            };
-
-            var createdProduct = _databaseContext.Products.Add(product);
-
-            await _databaseContext.SaveChangesAsync();
-
-            return Ok(createdProduct.Entity);
+            var createProduct = await _productBO.CreateProductAsync(createProductRequest);
+            return Ok(createProduct);
         }
 
         [HttpPut("{productId}")]
         public async Task<IActionResult> UpdateProductByIdAsync([FromRoute] int productId, [FromBody] UpdateProductRequest updateProductRequest)
         {
-            var product = await _databaseContext.Products.FindAsync(productId);
-            if (product is null)
-                return NotFound();
-
-            if(updateProductRequest.CategoryId is not null)
-            {
-                var category = await _databaseContext.Categories.FindAsync(updateProductRequest.CategoryId);
-                if (category is null)
-                    return BadRequest($"Category ID {updateProductRequest.CategoryId} not exists");
-            }
-
-            product.Name = string.IsNullOrWhiteSpace(updateProductRequest.Name) ? product.Name : updateProductRequest.Name;
-            product.Price = updateProductRequest.Price ?? product.Price;
-            product.CategoryId = updateProductRequest.CategoryId ?? product.CategoryId;
-
-            await _databaseContext.SaveChangesAsync();
+            var product = await _productBO.UpdateProductAsync(productId, updateProductRequest);
 
             return Ok(product);
         }
@@ -83,16 +66,9 @@ namespace RestaurantOrderingSystem.Controllers
         [HttpDelete("{productId}")]
         public async Task<IActionResult> DeleteProductByIdAsync([FromRoute] int productId)
         {
-            var product = await _databaseContext.Products.FindAsync(productId);
-            
-            if (product is null)
-                return NotFound();
+            var product = await _productBO.DeleteProductAsync(productId);
 
-            var deletedProduct = _databaseContext.Products.Remove(product);
-
-            await _databaseContext.SaveChangesAsync();
-
-            return Ok(deletedProduct.Entity);
+            return Ok(product);
         }
     }
 }
