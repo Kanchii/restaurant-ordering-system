@@ -9,5 +9,8 @@ namespace RestaurantOrderingSystem.Models.Entities.Product
 
         [JsonPropertyName("price")]
         public decimal? Price { get; set; }
+
+        [JsonPropertyName("categoryId")]
+        public int? CategoryId { get; set; }
     }
 }

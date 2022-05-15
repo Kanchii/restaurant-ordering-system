@@ -1,4 +1,5 @@
-﻿using System.Text.Json.Serialization;
+﻿using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace RestaurantOrderingSystem.Models.Entities.Product
 {
@@ -9,5 +10,8 @@ namespace RestaurantOrderingSystem.Models.Entities.Product
 
         [JsonPropertyName("price")]
         public decimal Price { get; set; }
+
+        [JsonPropertyName("categoryId")]
+        public int CategoryId { get; set; }
     }
 }

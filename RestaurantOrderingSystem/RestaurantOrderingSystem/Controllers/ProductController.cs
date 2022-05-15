@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using RestaurantOrderingSystem.Models;
 using RestaurantOrderingSystem.Models.Entities.Product;
+using System.Net;
 
 namespace RestaurantOrderingSystem.Controllers
 {
@@ -24,9 +26,9 @@ namespace RestaurantOrderingSystem.Controllers
         }
 
         [HttpGet("{productId}")]
-        public IActionResult GetProductById([FromRoute] int productId)
+        public async Task<IActionResult> GetProductById([FromRoute] int productId)
         {
-            var product = _databaseContext.Products.Find(productId);
+            var product = await _databaseContext.Products.FindAsync(productId);
 
             if (product is null)
                 return NotFound();
@@ -35,32 +37,47 @@ namespace RestaurantOrderingSystem.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> CreateNewProductAsync([FromBody] CreateProductRequest createProductRequest)
+        public async Task<IActionResult> CreateProductAsync([FromBody] CreateProductRequest createProductRequest)
         {
+            var category = await _databaseContext.Categories.FindAsync(createProductRequest.CategoryId);
+            if (category is null)
+                return BadRequest($"Category ID {createProductRequest.CategoryId} not exists");
+
             var product = new Product
             {
                 Name = createProductRequest.Name,
-                Price = createProductRequest.Price
+                Price = createProductRequest.Price,
+                CategoryId = createProductRequest.CategoryId
             };
 
-            _databaseContext.Products.Add(product);
+            var createdProduct = _databaseContext.Products.Add(product);
+
             await _databaseContext.SaveChangesAsync();
 
-            return Ok();
+            return Ok(createdProduct.Entity);
         }
 
         [HttpPut("{productId}")]
         public async Task<IActionResult> UpdateProductByIdAsync([FromRoute] int productId, [FromBody] UpdateProductRequest updateProductRequest)
         {
-            var product = _databaseContext.Products.FirstOrDefault(x => x.Id == productId);
+            var product = await _databaseContext.Products.FindAsync(productId);
             if (product is null)
                 return NotFound();
 
+            if(updateProductRequest.CategoryId is not null)
+            {
+                var category = await _databaseContext.Categories.FindAsync(updateProductRequest.CategoryId);
+                if (category is null)
+                    return BadRequest($"Category ID {updateProductRequest.CategoryId} not exists");
+            }
+
             product.Name = string.IsNullOrWhiteSpace(updateProductRequest.Name) ? product.Name : updateProductRequest.Name;
             product.Price = updateProductRequest.Price ?? product.Price;
+            product.CategoryId = updateProductRequest.CategoryId ?? product.CategoryId;
 
             await _databaseContext.SaveChangesAsync();
-            return Ok();
+
+            return Ok(product);
         }
 
         [HttpDelete("{productId}")]
@@ -71,11 +88,11 @@ namespace RestaurantOrderingSystem.Controllers
             if (product is null)
                 return NotFound();
 
-            _databaseContext.Products.Remove(product);
+            var deletedProduct = _databaseContext.Products.Remove(product);
 
             await _databaseContext.SaveChangesAsync();
 
-            return Ok();
+            return Ok(deletedProduct.Entity);
         }
     }
 }
