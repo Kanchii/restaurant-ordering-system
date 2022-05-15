@@ -14,5 +14,9 @@ namespace RestaurantOrderingSystem.Models
 
         [Required]
         public decimal Price { get; set; }
+
+        [ForeignKey("category")]
+        public int CategoryId { get; set; }
+        public Category Category { get; set; } = new();
     }
 }

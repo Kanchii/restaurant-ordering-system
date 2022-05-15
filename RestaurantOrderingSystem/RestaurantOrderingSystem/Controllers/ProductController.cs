@@ -18,7 +18,7 @@ namespace RestaurantOrderingSystem.Controllers
         [HttpGet]
         public IActionResult GetAllProduct()
         {
-            var allProducts = _databaseContext.Products.Select(x => x);
+            var allProducts = _databaseContext.Products?.Select(x => x);
 
             return Ok(allProducts);
         }
@@ -26,7 +26,7 @@ namespace RestaurantOrderingSystem.Controllers
         [HttpGet("{productId}")]
         public IActionResult GetProductById([FromRoute] int productId)
         {
-            var product = _databaseContext.Products.Find(productId);
+            var product = _databaseContext.Products?.Find(productId);
 
             if (product is null)
                 return NotFound();
@@ -43,7 +43,7 @@ namespace RestaurantOrderingSystem.Controllers
                 Price = createProductRequest.Price
             };
 
-            _databaseContext.Products.Add(product);
+            _databaseContext.Products?.Add(product);
             await _databaseContext.SaveChangesAsync();
 
             return Ok();
@@ -52,7 +52,7 @@ namespace RestaurantOrderingSystem.Controllers
         [HttpPut("{productId}")]
         public async Task<IActionResult> UpdateProductByIdAsync([FromRoute] int productId, [FromBody] UpdateProductRequest updateProductRequest)
         {
-            var product = _databaseContext.Products.FirstOrDefault(x => x.Id == productId);
+            var product = _databaseContext.Products?.FirstOrDefault(x => x.Id == productId);
             if (product is null)
                 return NotFound();
 
@@ -66,12 +66,15 @@ namespace RestaurantOrderingSystem.Controllers
         [HttpDelete("{productId}")]
         public async Task<IActionResult> DeleteProductByIdAsync([FromRoute] int productId)
         {
+            if (_databaseContext.Products is null)
+                return NotFound();
+
             var product = await _databaseContext.Products.FindAsync(productId);
             
             if (product is null)
                 return NotFound();
 
-            _databaseContext.Products.Remove(product);
+            _databaseContext.Products?.Remove(product);
 
             await _databaseContext.SaveChangesAsync();
 

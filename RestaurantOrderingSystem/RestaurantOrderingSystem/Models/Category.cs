@@ -11,5 +11,7 @@ namespace RestaurantOrderingSystem.Models
 
         [Required, MaxLength(60)]
         public string Name { get; set; } = string.Empty;
+
+        public ICollection<Product> Products { get; set; } = new HashSet<Product>();
     }
 }
