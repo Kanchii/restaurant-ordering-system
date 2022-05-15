@@ -11,8 +11,8 @@ using RestaurantOrderingSystem.Models;
 namespace RestaurantOrderingSystem.Migrations
 {
     [DbContext(typeof(DatabaseContext))]
-    [Migration("20220515151148_AddCategoryAsForeignKeyForProductModel")]
-    partial class AddCategoryAsForeignKeyForProductModel
+    [Migration("20220515195421_FirstMigration")]
+    partial class FirstMigration
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {

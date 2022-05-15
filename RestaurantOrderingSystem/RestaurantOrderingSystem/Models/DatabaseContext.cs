@@ -4,8 +4,8 @@ namespace RestaurantOrderingSystem.Models
 {
     public class DatabaseContext : DbContext
     {
-        public DbSet<Product>? Products { get; set; }
-        public DbSet<Category>? Categories { get; set; }
+        public DbSet<Product> Products => Set<Product>();
+        public DbSet<Category> Categories => Set<Category>();
 
         public DatabaseContext(DbContextOptions<DatabaseContext> options)
             : base(options) { }
@@ -14,11 +14,9 @@ namespace RestaurantOrderingSystem.Models
         {
             builder.Entity<Product>()
                 .HasOne(p => p.Category)
-                .WithMany(p => p.Products)
+                .WithMany(c => c.Products)
                 .HasForeignKey(p => p.CategoryId)
                 .IsRequired();
-
-            base.OnModelCreating(builder);
         }
     }
 }
